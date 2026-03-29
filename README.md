@@ -88,6 +88,22 @@ mvn -pl services/knowledge-service spring-boot:run
 mvn -pl services/audit-service spring-boot:run
 ```
 
+## Chạy Toàn Bộ Hệ Thống Bằng 1 Lệnh (Script SH)
+Script `infra/scripts/run-all.sh` sẽ chạy tuần tự toàn bộ stack, tự kiểm tra tool và tự cài thư viện còn thiếu.
+
+```bash
+bash infra/scripts/run-all.sh
+```
+
+Script sẽ:
+1. Kiểm tra `docker`, `python`, `node`, `npm`, và tự cài Maven local nếu chưa có.
+2. Khởi động `docker-compose` (Postgres/Redis/MinIO).
+3. Build các service Java (skip tests).
+4. Chạy từng service theo thứ tự và đợi `/actuator/health`.
+5. Tạo venv Python, cài dependency và chạy Agent Runtime.
+6. Cài npm dependencies và chạy Admin Console.
+7. Ghi log vào thư mục `.run-logs/`.
+
 ## Chạy Agent Runtime
 ```bash
 cd apps/agent-runtime

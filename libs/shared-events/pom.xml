@@ -6,6 +6,7 @@
     <groupId>com.bizflow</groupId>
     <artifactId>bizflow-agent-hub</artifactId>
     <version>0.1.0</version>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <artifactId>shared-events</artifactId>
@@ -18,3 +19,4 @@
     </dependency>
   </dependencies>
 </project>
+

@@ -12,11 +12,17 @@ dist/
 __pycache__/
 *.pyc
 .venv/
+*.egg-info/
 
 # Maven/Java
 /target/
 **/target/
 *.log
+*.tsbuildinfo
+
+# Local tooling/cache
+.tooling/
+.run-logs/
 
 # Env
 .env
