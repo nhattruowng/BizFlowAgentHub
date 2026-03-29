@@ -1,0 +1,26 @@
+# General
+.DS_Store
+.idea
+.vscode
+*.iml
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Maven/Java
+/target/
+**/target/
+*.log
+
+# Env
+.env
+.env.*
+
+# Misc
+*.tmp

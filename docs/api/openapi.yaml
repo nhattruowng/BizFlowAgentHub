@@ -1,0 +1,91 @@
+openapi: 3.0.3
+info:
+  title: BizFlow Agent Hub API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8081
+paths:
+  /api/tasks:
+    post:
+      summary: Create task
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        "200":
+          description: Task created
+  /api/tasks/{id}:
+    get:
+      summary: Get task
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Task
+  /api/workflows/run:
+    post:
+      summary: Start workflow
+      responses:
+        "200":
+          description: Workflow run created
+  /api/workflows/runs/{id}:
+    get:
+      summary: Get workflow run
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Workflow run
+  /api/approvals/{id}/approve:
+    post:
+      summary: Approve
+      responses:
+        "200":
+          description: Approved
+  /api/approvals/{id}/reject:
+    post:
+      summary: Reject
+      responses:
+        "200":
+          description: Rejected
+  /api/audit/{runId}:
+    get:
+      summary: Audit logs
+      parameters:
+        - name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Audit logs
+  /api/tools:
+    get:
+      summary: List tools
+      responses:
+        "200":
+          description: Tools
+  /api/agents:
+    get:
+      summary: List agents
+      responses:
+        "200":
+          description: Agents
+  /api/knowledge/search:
+    post:
+      summary: Search knowledge
+      responses:
+        "200":
+          description: Knowledge search
