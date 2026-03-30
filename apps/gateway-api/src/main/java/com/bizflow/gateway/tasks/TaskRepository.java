@@ -1,8 +1,8 @@
 package com.bizflow.gateway.tasks;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
 import java.util.UUID;
 
-public interface TaskRepository extends JpaRepository<TaskEntity, UUID> {
+public interface TaskRepository extends ReactiveCrudRepository<TaskEntity, UUID> {
 }
