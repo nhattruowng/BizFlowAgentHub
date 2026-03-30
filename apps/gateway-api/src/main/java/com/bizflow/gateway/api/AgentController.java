@@ -2,22 +2,18 @@ package com.bizflow.gateway.api;
 
 import com.bizflow.gateway.agents.AgentEntity;
 import com.bizflow.gateway.agents.AgentRepository;
-import org.springframework.http.ResponseEntity;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 @RestController
 @RequestMapping("/api/agents")
+@RequiredArgsConstructor
 public class AgentController {
     private final AgentRepository repository;
 
-    public AgentController(AgentRepository repository) {
-        this.repository = repository;
-    }
-
     @GetMapping
-    public ResponseEntity<List<AgentEntity>> list() {
-        return ResponseEntity.ok(repository.findAll());
+    public Flux<AgentEntity> list() {
+        return repository.findAll();
     }
 }

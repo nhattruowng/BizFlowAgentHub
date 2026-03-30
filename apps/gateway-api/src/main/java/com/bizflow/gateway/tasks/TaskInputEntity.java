@@ -1,54 +1,33 @@
 package com.bizflow.gateway.tasks;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "task_inputs")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("task_inputs")
 public class TaskInputEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "task_id", nullable = false)
+    @Column("task_id")
     private UUID taskId;
 
-    @Column(name = "payload_json", columnDefinition = "text", nullable = false)
+    @Column("payload_json")
     private String payloadJson;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getTaskId() {
-        return taskId;
-    }
-
-    public void setTaskId(UUID taskId) {
-        this.taskId = taskId;
-    }
-
-    public String getPayloadJson() {
-        return payloadJson;
-    }
-
-    public void setPayloadJson(String payloadJson) {
-        this.payloadJson = payloadJson;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }
