@@ -8,4 +8,6 @@ import java.util.UUID;
 
 public interface ApprovalRepository extends ReactiveCrudRepository<ApprovalEntity, UUID> {
     Flux<ApprovalEntity> findByStatus(ApprovalStatus status);
+    Flux<ApprovalEntity> findByWorkflowRunId(String workflowRunId);
+    Flux<ApprovalEntity> findByWorkflowRunIdAndStatus(String workflowRunId, ApprovalStatus status);
 }
