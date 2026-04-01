@@ -201,6 +201,7 @@ npm run build
 - `docs/architecture/erd.md`
 - `docs/runbooks/local-development.md`
 - `docs/runbooks/user-guide.md`
+- `docs/modules/workflow-engine.md`
 
 ## TODO / Roadmap
 - Tích hợp Temporal thật.

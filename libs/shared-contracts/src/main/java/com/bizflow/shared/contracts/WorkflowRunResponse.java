@@ -16,8 +16,11 @@ public class WorkflowRunResponse {
     private String runId;
     private String workflowName;
     private WorkflowStatus status;
+    private String currentStep;
     private String correlationId;
+    private String errorReason;
     private Instant startedAt;
     private Instant updatedAt;
     private List<String> steps;
+    private List<WorkflowStepView> stepDetails;
 }
