@@ -1,65 +1,36 @@
 package com.bizflow.knowledge.core;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "knowledge_chunks")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("knowledge_chunks")
 public class KnowledgeChunkEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "doc_id", nullable = false)
+    @Column("doc_id")
     private UUID docId;
 
-    @Column(name = "chunk_index", nullable = false)
+    @Column("chunk_index")
     private int chunkIndex;
 
-    @Column(name = "content", columnDefinition = "text", nullable = false)
+    @Column("content")
     private String content;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getDocId() {
-        return docId;
-    }
-
-    public void setDocId(UUID docId) {
-        this.docId = docId;
-    }
-
-    public int getChunkIndex() {
-        return chunkIndex;
-    }
-
-    public void setChunkIndex(int chunkIndex) {
-        this.chunkIndex = chunkIndex;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
-        this.content = content;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

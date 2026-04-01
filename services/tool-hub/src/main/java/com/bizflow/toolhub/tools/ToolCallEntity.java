@@ -1,87 +1,42 @@
 package com.bizflow.toolhub.tools;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "tool_calls")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("tool_calls")
 public class ToolCallEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "tool_id", nullable = false)
+    @Column("tool_id")
     private UUID toolId;
 
-    @Column(name = "workflow_run_id")
+    @Column("workflow_run_id")
     private String workflowRunId;
 
-    @Column(name = "status", nullable = false)
+    @Column("status")
     private String status;
 
-    @Column(name = "request_payload", columnDefinition = "text")
+    @Column("request_payload")
     private String requestPayload;
 
-    @Column(name = "response_payload", columnDefinition = "text")
+    @Column("response_payload")
     private String responsePayload;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getToolId() {
-        return toolId;
-    }
-
-    public void setToolId(UUID toolId) {
-        this.toolId = toolId;
-    }
-
-    public String getWorkflowRunId() {
-        return workflowRunId;
-    }
-
-    public void setWorkflowRunId(String workflowRunId) {
-        this.workflowRunId = workflowRunId;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public String getRequestPayload() {
-        return requestPayload;
-    }
-
-    public void setRequestPayload(String requestPayload) {
-        this.requestPayload = requestPayload;
-    }
-
-    public String getResponsePayload() {
-        return responsePayload;
-    }
-
-    public void setResponsePayload(String responsePayload) {
-        this.responsePayload = responsePayload;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

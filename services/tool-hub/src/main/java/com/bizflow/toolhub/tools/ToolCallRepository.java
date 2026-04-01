@@ -1,8 +1,8 @@
 package com.bizflow.toolhub.tools;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
 import java.util.UUID;
 
-public interface ToolCallRepository extends JpaRepository<ToolCallEntity, UUID> {
+public interface ToolCallRepository extends ReactiveCrudRepository<ToolCallEntity, UUID> {
 }

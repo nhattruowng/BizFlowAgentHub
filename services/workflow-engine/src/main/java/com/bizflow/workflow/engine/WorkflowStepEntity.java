@@ -1,99 +1,46 @@
 package com.bizflow.workflow.engine;
 
 import com.bizflow.shared.contracts.WorkflowStatus;
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "workflow_steps")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("workflow_steps")
 public class WorkflowStepEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "run_id", nullable = false)
+    @Column("run_id")
     private UUID runId;
 
-    @Column(name = "step_name", nullable = false)
+    @Column("step_name")
     private String stepName;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false)
+    @Column("status")
     private WorkflowStatus status;
 
-    @Column(name = "attempt", nullable = false)
+    @Column("attempt")
     private int attempt;
 
-    @Column(name = "started_at")
+    @Column("started_at")
     private Instant startedAt;
 
-    @Column(name = "ended_at")
+    @Column("ended_at")
     private Instant endedAt;
 
-    @Column(name = "error_reason")
+    @Column("error_reason")
     private String errorReason;
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getRunId() {
-        return runId;
-    }
-
-    public void setRunId(UUID runId) {
-        this.runId = runId;
-    }
-
-    public String getStepName() {
-        return stepName;
-    }
-
-    public void setStepName(String stepName) {
-        this.stepName = stepName;
-    }
-
-    public WorkflowStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(WorkflowStatus status) {
-        this.status = status;
-    }
-
-    public int getAttempt() {
-        return attempt;
-    }
-
-    public void setAttempt(int attempt) {
-        this.attempt = attempt;
-    }
-
-    public Instant getStartedAt() {
-        return startedAt;
-    }
-
-    public void setStartedAt(Instant startedAt) {
-        this.startedAt = startedAt;
-    }
-
-    public Instant getEndedAt() {
-        return endedAt;
-    }
-
-    public void setEndedAt(Instant endedAt) {
-        this.endedAt = endedAt;
-    }
-
-    public String getErrorReason() {
-        return errorReason;
-    }
-
-    public void setErrorReason(String errorReason) {
-        this.errorReason = errorReason;
-    }
 }
