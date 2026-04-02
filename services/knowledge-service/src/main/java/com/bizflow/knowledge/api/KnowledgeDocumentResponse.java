@@ -5,15 +5,15 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.Instant;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class KnowledgeSearchResult {
+public class KnowledgeDocumentResponse {
     private String docId;
-    private String chunkId;
     private String title;
     private String source;
-    private String content;
-    private int score;
+    private Instant createdAt;
 }
