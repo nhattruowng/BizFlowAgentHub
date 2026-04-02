@@ -203,6 +203,10 @@ npm run build
 - `docs/runbooks/user-guide.md`
 - `docs/modules/gateway-api.md`
 - `docs/modules/workflow-engine.md`
+- `docs/modules/tool-hub.md`
+- `docs/modules/approval-service.md`
+- `docs/modules/knowledge-service.md`
+- `docs/modules/audit-service.md`
 
 ## TODO / Roadmap
 - Tích hợp Temporal thật.

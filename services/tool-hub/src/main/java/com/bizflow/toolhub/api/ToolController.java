@@ -2,6 +2,7 @@ package com.bizflow.toolhub.api;
 
 import com.bizflow.toolhub.tools.ToolEntity;
 import com.bizflow.toolhub.tools.ToolHubService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,9 +24,14 @@ public class ToolController {
         return toolHubService.listTools();
     }
 
+    @GetMapping("/calls/{workflowRunId}")
+    public Flux<ToolCallHistoryResponse> listCalls(@PathVariable String workflowRunId) {
+        return toolHubService.listCalls(workflowRunId);
+    }
+
     @PostMapping("/{toolName}/invoke")
     public Mono<ToolInvokeResponse> invoke(@PathVariable String toolName,
-                                           @RequestBody ToolInvokeRequest request) {
+                                           @Valid @RequestBody ToolInvokeRequest request) {
         return toolHubService.invoke(toolName, request);
     }
 }
