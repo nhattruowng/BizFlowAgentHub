@@ -3,7 +3,7 @@ server:
 
 spring:
   r2dbc:
-    url: r2dbc:pool:postgresql://localhost:5432/bizflow
+    url: r2dbc:postgresql://localhost:5432/bizflow
     username: bizflow
     password: bizflow
     pool:

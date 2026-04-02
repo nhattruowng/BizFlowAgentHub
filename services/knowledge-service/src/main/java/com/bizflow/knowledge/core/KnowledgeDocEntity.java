@@ -1,54 +1,33 @@
 package com.bizflow.knowledge.core;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "knowledge_docs")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("knowledge_docs")
 public class KnowledgeDocEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "title", nullable = false)
+    @Column("title")
     private String title;
 
-    @Column(name = "source", nullable = false)
+    @Column("source")
     private String source;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getTitle() {
-        return title;
-    }
-
-    public void setTitle(String title) {
-        this.title = title;
-    }
-
-    public String getSource() {
-        return source;
-    }
-
-    public void setSource(String source) {
-        this.source = source;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

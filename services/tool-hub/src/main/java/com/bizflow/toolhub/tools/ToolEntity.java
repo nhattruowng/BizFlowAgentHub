@@ -1,111 +1,49 @@
 package com.bizflow.toolhub.tools;
 
 import com.bizflow.shared.contracts.ToolSideEffectLevel;
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "tools")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("tools")
 public class ToolEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "tool_name", nullable = false, unique = true)
+    @Column("tool_name")
     private String toolName;
 
-    @Column(name = "version", nullable = false)
+    @Column("version")
     private String version;
 
-    @Column(name = "description", nullable = false)
+    @Column("description")
     private String description;
 
-    @Column(name = "input_schema", columnDefinition = "text", nullable = false)
+    @Column("input_schema")
     private String inputSchema;
 
-    @Column(name = "output_schema", columnDefinition = "text", nullable = false)
+    @Column("output_schema")
     private String outputSchema;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "side_effect_level", nullable = false)
+    @Column("side_effect_level")
     private ToolSideEffectLevel sideEffectLevel;
 
-    @Column(name = "approval_required", nullable = false)
+    @Column("approval_required")
     private boolean approvalRequired;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getToolName() {
-        return toolName;
-    }
-
-    public void setToolName(String toolName) {
-        this.toolName = toolName;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
-    public String getInputSchema() {
-        return inputSchema;
-    }
-
-    public void setInputSchema(String inputSchema) {
-        this.inputSchema = inputSchema;
-    }
-
-    public String getOutputSchema() {
-        return outputSchema;
-    }
-
-    public void setOutputSchema(String outputSchema) {
-        this.outputSchema = outputSchema;
-    }
-
-    public ToolSideEffectLevel getSideEffectLevel() {
-        return sideEffectLevel;
-    }
-
-    public void setSideEffectLevel(ToolSideEffectLevel sideEffectLevel) {
-        this.sideEffectLevel = sideEffectLevel;
-    }
-
-    public boolean isApprovalRequired() {
-        return approvalRequired;
-    }
-
-    public void setApprovalRequired(boolean approvalRequired) {
-        this.approvalRequired = approvalRequired;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }

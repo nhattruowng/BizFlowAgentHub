@@ -1,10 +1,11 @@
 package com.bizflow.approval.core;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import com.bizflow.shared.contracts.ApprovalStatus;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.UUID;
 
-public interface ApprovalRepository extends JpaRepository<ApprovalEntity, UUID> {
-    List<ApprovalEntity> findByStatus(com.bizflow.shared.contracts.ApprovalStatus status);
+public interface ApprovalRepository extends ReactiveCrudRepository<ApprovalEntity, UUID> {
+    Flux<ApprovalEntity> findByStatus(ApprovalStatus status);
 }

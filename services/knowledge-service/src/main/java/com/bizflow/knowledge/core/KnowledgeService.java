@@ -2,41 +2,38 @@ package com.bizflow.knowledge.core;
 
 import com.bizflow.knowledge.api.KnowledgeSearchRequest;
 import com.bizflow.knowledge.api.KnowledgeSearchResult;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.stream.Collectors;
+import java.util.function.Function;
 
 @Service
+@RequiredArgsConstructor
 public class KnowledgeService {
     private final KnowledgeDocRepository docRepository;
     private final KnowledgeChunkRepository chunkRepository;
 
-    public KnowledgeService(KnowledgeDocRepository docRepository, KnowledgeChunkRepository chunkRepository) {
-        this.docRepository = docRepository;
-        this.chunkRepository = chunkRepository;
+    public Flux<KnowledgeSearchResult> search(KnowledgeSearchRequest request) {
+        return chunkRepository.search(request.getQuery())
+                .take(Math.max(1, request.getLimit()))
+                .collectList()
+                .flatMapMany(chunks -> docRepository.findAllById(chunks.stream().map(KnowledgeChunkEntity::getDocId).distinct().toList())
+                        .collectMap(KnowledgeDocEntity::getId, Function.identity())
+                        .flatMapMany(docs -> Flux.fromIterable(chunks)
+                                .map(chunk -> mapResult(chunk, docs))));
     }
 
-    public List<KnowledgeSearchResult> search(KnowledgeSearchRequest request) {
-        List<KnowledgeChunkEntity> chunks = chunkRepository.search(request.getQuery());
-        Map<UUID, KnowledgeDocEntity> docs = docRepository.findAllById(
-                chunks.stream().map(KnowledgeChunkEntity::getDocId).collect(Collectors.toSet())
-        ).stream().collect(Collectors.toMap(KnowledgeDocEntity::getId, d -> d));
-
-        return chunks.stream()
-                .limit(request.getLimit())
-                .map(chunk -> {
-                    KnowledgeDocEntity doc = docs.get(chunk.getDocId());
-                    return new KnowledgeSearchResult(
-                            chunk.getDocId().toString(),
-                            chunk.getId().toString(),
-                            doc != null ? doc.getTitle() : "",
-                            doc != null ? doc.getSource() : "",
-                            chunk.getContent()
-                    );
-                })
-                .toList();
+    private KnowledgeSearchResult mapResult(KnowledgeChunkEntity chunk, Map<UUID, KnowledgeDocEntity> docs) {
+        KnowledgeDocEntity doc = docs.get(chunk.getDocId());
+        return KnowledgeSearchResult.builder()
+                .docId(chunk.getDocId().toString())
+                .chunkId(chunk.getId().toString())
+                .title(doc != null ? doc.getTitle() : "")
+                .source(doc != null ? doc.getSource() : "")
+                .content(chunk.getContent())
+                .build();
     }
 }
