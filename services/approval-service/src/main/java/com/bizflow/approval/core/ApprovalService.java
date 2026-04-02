@@ -3,58 +3,66 @@ package com.bizflow.approval.core;
 import com.bizflow.approval.api.ApprovalRequest;
 import com.bizflow.approval.api.ApprovalResponse;
 import com.bizflow.shared.contracts.ApprovalStatus;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
+import java.time.Instant;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class ApprovalService {
     private final ApprovalRepository repository;
 
-    public ApprovalService(ApprovalRepository repository) {
-        this.repository = repository;
+    public Mono<ApprovalResponse> create(ApprovalRequest request) {
+        Instant now = Instant.now();
+        return repository.save(ApprovalEntity.builder()
+                        .workflowRunId(request.getWorkflowRunId())
+                        .requestedBy(request.getRequestedBy())
+                        .reason(request.getReason())
+                        .status(ApprovalStatus.PENDING)
+                        .createdAt(now)
+                        .updatedAt(now)
+                        .build())
+                .map(this::map);
     }
 
-    public ApprovalResponse create(ApprovalRequest request) {
-        ApprovalEntity entity = new ApprovalEntity();
-        entity.setWorkflowRunId(request.getWorkflowRunId());
-        entity.setRequestedBy(request.getRequestedBy());
-        entity.setReason(request.getReason());
-        entity.setStatus(ApprovalStatus.PENDING);
-        entity = repository.save(entity);
-        return map(entity);
+    public Flux<ApprovalResponse> listPending() {
+        return repository.findByStatus(ApprovalStatus.PENDING).map(this::map);
     }
 
-    public List<ApprovalResponse> listPending() {
-        return repository.findByStatus(ApprovalStatus.PENDING).stream().map(this::map).toList();
+    public Mono<ApprovalResponse> approve(UUID id, String decidedBy) {
+        return updateDecision(id, decidedBy, ApprovalStatus.APPROVED);
     }
 
-    public ApprovalResponse approve(UUID id, String decidedBy) {
-        ApprovalEntity entity = repository.findById(id).orElseThrow();
-        entity.setStatus(ApprovalStatus.APPROVED);
-        entity.setDecidedBy(decidedBy);
-        entity = repository.save(entity);
-        return map(entity);
+    public Mono<ApprovalResponse> reject(UUID id, String decidedBy) {
+        return updateDecision(id, decidedBy, ApprovalStatus.REJECTED);
     }
 
-    public ApprovalResponse reject(UUID id, String decidedBy) {
-        ApprovalEntity entity = repository.findById(id).orElseThrow();
-        entity.setStatus(ApprovalStatus.REJECTED);
-        entity.setDecidedBy(decidedBy);
-        entity = repository.save(entity);
-        return map(entity);
+    private Mono<ApprovalResponse> updateDecision(UUID id, String decidedBy, ApprovalStatus status) {
+        return repository.findById(id)
+                .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval not found")))
+                .flatMap(entity -> repository.save(entity.toBuilder()
+                                .status(status)
+                                .decidedBy(decidedBy)
+                                .updatedAt(Instant.now())
+                                .build()))
+                .map(this::map);
     }
 
     private ApprovalResponse map(ApprovalEntity entity) {
-        return new ApprovalResponse(
-                entity.getId().toString(),
-                entity.getWorkflowRunId(),
-                entity.getStatus(),
-                entity.getRequestedBy(),
-                entity.getDecidedBy(),
-                entity.getReason(),
-                entity.getCreatedAt()
-        );
+        return ApprovalResponse.builder()
+                .id(entity.getId().toString())
+                .workflowRunId(entity.getWorkflowRunId())
+                .status(entity.getStatus())
+                .requestedBy(entity.getRequestedBy())
+                .decidedBy(entity.getDecidedBy())
+                .reason(entity.getReason())
+                .createdAt(entity.getCreatedAt())
+                .build();
     }
 }

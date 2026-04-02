@@ -3,24 +3,38 @@ package com.bizflow.gateway.api;
 import com.bizflow.shared.contracts.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.support.WebExchangeBindException;
+import org.springframework.web.server.ResponseStatusException;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        ErrorResponse error = new ErrorResponse("validation_error", ex.getMessage(), UUID.randomUUID().toString(), Instant.now());
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    @ExceptionHandler(WebExchangeBindException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleValidation(WebExchangeBindException ex) {
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse("validation_error", ex.getMessage())));
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public Mono<ResponseEntity<ErrorResponse>> handleStatus(ResponseStatusException ex) {
+        return Mono.just(ResponseEntity.status(ex.getStatusCode()).body(errorResponse("request_error", ex.getReason())));
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
-        ErrorResponse error = new ErrorResponse("internal_error", ex.getMessage(), UUID.randomUUID().toString(), Instant.now());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
+    public Mono<ResponseEntity<ErrorResponse>> handleGeneric(Exception ex) {
+        return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse("internal_error", ex.getMessage())));
+    }
+
+    private ErrorResponse errorResponse(String error, String message) {
+        return ErrorResponse.builder()
+                .error(error)
+                .message(message)
+                .correlationId(UUID.randomUUID().toString())
+                .timestamp(Instant.now())
+                .build();
     }
 }

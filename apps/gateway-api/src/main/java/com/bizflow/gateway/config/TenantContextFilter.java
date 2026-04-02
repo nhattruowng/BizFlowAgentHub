@@ -1,37 +1,35 @@
 package com.bizflow.gateway.config;
 
-import com.bizflow.shared.security.TenantContext;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
+import org.springframework.util.StringUtils;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
+import reactor.core.publisher.Mono;
 
 @Component
-public class TenantContextFilter extends OncePerRequestFilter {
+public class TenantContextFilter implements WebFilter {
+    private static final String TENANT_ID_HEADER = "X-Tenant-Id";
+    private static final String USER_ID_HEADER = "X-User-Id";
+    private static final String USER_ROLE_HEADER = "X-User-Role";
+
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        String tenantId = request.getHeader("X-Tenant-Id");
-        String userId = request.getHeader("X-User-Id");
-        String role = request.getHeader("X-User-Role");
-        if (tenantId == null || tenantId.isBlank()) {
-            tenantId = "demo-tenant";
-        }
-        if (userId == null || userId.isBlank()) {
-            userId = "demo-user";
-        }
-        if (role == null || role.isBlank()) {
-            role = "ADMIN";
-        }
-        TenantContext.set(tenantId, userId, role);
-        try {
-            filterChain.doFilter(request, response);
-        } finally {
-            TenantContext.clear();
+    public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
+        var mutatedRequest = exchange.getRequest().mutate()
+                .headers(headers -> {
+                    applyDefault(headers.getFirst(TENANT_ID_HEADER), TENANT_ID_HEADER, "demo-tenant", headers);
+                    applyDefault(headers.getFirst(USER_ID_HEADER), USER_ID_HEADER, "demo-user", headers);
+                    applyDefault(headers.getFirst(USER_ROLE_HEADER), USER_ROLE_HEADER, "ADMIN", headers);
+                })
+                .build();
+
+        return chain.filter(exchange.mutate().request(mutatedRequest).build());
+    }
+
+    private void applyDefault(String currentValue, String headerName, String defaultValue,
+                              org.springframework.http.HttpHeaders headers) {
+        if (!StringUtils.hasText(currentValue)) {
+            headers.set(headerName, defaultValue);
         }
     }
 }

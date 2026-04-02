@@ -1,18 +1,15 @@
 package com.bizflow.audit.core;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
+import reactor.core.publisher.Flux;
 
 @Service
+@RequiredArgsConstructor
 public class AuditService {
     private final AuditLogRepository repository;
 
-    public AuditService(AuditLogRepository repository) {
-        this.repository = repository;
-    }
-
-    public List<AuditLogEntity> findByRunId(String runId) {
+    public Flux<AuditLogEntity> findByRunId(String runId) {
         return repository.findByWorkflowRunId(runId);
     }
 }

@@ -1,10 +1,10 @@
 package com.bizflow.toolhub.tools;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Mono;
 
-import java.util.Optional;
 import java.util.UUID;
 
-public interface ToolRepository extends JpaRepository<ToolEntity, UUID> {
-    Optional<ToolEntity> findByToolName(String toolName);
+public interface ToolRepository extends ReactiveCrudRepository<ToolEntity, UUID> {
+    Mono<ToolEntity> findByToolName(String toolName);
 }

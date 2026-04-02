@@ -1,9 +1,8 @@
 package com.bizflow.knowledge.core;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 
-import java.util.List;
 import java.util.UUID;
 
-public interface KnowledgeDocRepository extends JpaRepository<KnowledgeDocEntity, UUID> {
+public interface KnowledgeDocRepository extends ReactiveCrudRepository<KnowledgeDocEntity, UUID> {
 }

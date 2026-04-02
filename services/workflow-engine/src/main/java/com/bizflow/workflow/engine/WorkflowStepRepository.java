@@ -1,10 +1,10 @@
 package com.bizflow.workflow.engine;
 
-import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.UUID;
 
-public interface WorkflowStepRepository extends JpaRepository<WorkflowStepEntity, UUID> {
-    List<WorkflowStepEntity> findByRunId(UUID runId);
+public interface WorkflowStepRepository extends ReactiveCrudRepository<WorkflowStepEntity, UUID> {
+    Flux<WorkflowStepEntity> findByRunId(UUID runId);
 }

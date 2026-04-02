@@ -1,65 +1,36 @@
 package com.bizflow.audit.core;
 
-import jakarta.persistence.*;
-import org.hibernate.annotations.UuidGenerator;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.relational.core.mapping.Column;
+import org.springframework.data.relational.core.mapping.Table;
 
 import java.time.Instant;
 import java.util.UUID;
 
-@Entity
-@Table(name = "audit_logs")
+@Getter
+@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor
+@AllArgsConstructor
+@Table("audit_logs")
 public class AuditLogEntity {
     @Id
-    @GeneratedValue
-    @UuidGenerator
     private UUID id;
 
-    @Column(name = "workflow_run_id", nullable = false)
+    @Column("workflow_run_id")
     private String workflowRunId;
 
-    @Column(name = "action", nullable = false)
+    @Column("action")
     private String action;
 
-    @Column(name = "payload", columnDefinition = "text")
+    @Column("payload")
     private String payload;
 
-    @Column(name = "created_at", nullable = false)
+    @Column("created_at")
     private Instant createdAt;
-
-    @PrePersist
-    void onCreate() {
-        createdAt = Instant.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public String getWorkflowRunId() {
-        return workflowRunId;
-    }
-
-    public void setWorkflowRunId(String workflowRunId) {
-        this.workflowRunId = workflowRunId;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
-        this.action = action;
-    }
-
-    public String getPayload() {
-        return payload;
-    }
-
-    public void setPayload(String payload) {
-        this.payload = payload;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
 }
