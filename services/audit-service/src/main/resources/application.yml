@@ -12,6 +12,24 @@ spring:
       max-size: 30
       max-idle-time: 30m
       validation-query: SELECT 1
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:audit-service}
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: com.bizflow.shared.events
+        spring.json.use.type.headers: false
+        spring.json.value.default.type: com.bizflow.shared.events.OutboxEvent
+    listener:
+      ack-mode: manual_immediate
+
+bizflow:
+  kafka:
+    topic: ${KAFKA_TOPIC_EVENTS:events}
 
 management:
   endpoints:

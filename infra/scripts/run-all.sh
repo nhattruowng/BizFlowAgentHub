@@ -136,7 +136,7 @@ ensure_maven
 ensure_python
 ensure_node
 
-info "Starting infra (Postgres/Redis/MinIO)"
+info "Starting infra (Postgres/Redis/MinIO/Kafka)"
 if command_exists docker && command_exists docker-compose; then
   docker-compose -f "$ROOT_DIR/docker-compose.yml" up -d
 else

@@ -1,4 +1,4 @@
-package com.bizflow.audit.core;
+package com.bizflow.workflow.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -17,23 +17,32 @@ import java.util.UUID;
 @Builder(toBuilder = true)
 @NoArgsConstructor
 @AllArgsConstructor
-@Table("audit_logs")
-public class AuditLogEntity {
+@Table("events_outbox")
+public class OutboxEventEntity {
     @Id
     private UUID id;
 
-    @Column("workflow_run_id")
-    private String workflowRunId;
+    @Column("aggregate_type")
+    private String aggregateType;
 
-    @Column("action")
-    private String action;
+    @Column("aggregate_id")
+    private String aggregateId;
+
+    @Column("event_type")
+    private String eventType;
 
     @Column("payload")
     private String payload;
 
-    @Column("source_event_id")
-    private String sourceEventId;
+    @Column("status")
+    private String status;
 
     @Column("created_at")
     private Instant createdAt;
+
+    @Column("published_at")
+    private Instant publishedAt;
+
+    @Column("last_error")
+    private String lastError;
 }

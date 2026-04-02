@@ -178,6 +178,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
   workflow_run_id text NOT NULL,
   action text NOT NULL,
   payload text,
+  source_event_id text,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 
@@ -188,11 +189,24 @@ CREATE TABLE IF NOT EXISTS events_outbox (
   event_type text NOT NULL,
   payload text NOT NULL,
   status text NOT NULL DEFAULT 'NEW',
-  created_at timestamptz NOT NULL DEFAULT now()
+  created_at timestamptz NOT NULL DEFAULT now(),
+  published_at timestamptz,
+  last_error text
 );
+
+ALTER TABLE audit_logs
+  ADD COLUMN IF NOT EXISTS source_event_id text;
+
+ALTER TABLE events_outbox
+  ADD COLUMN IF NOT EXISTS published_at timestamptz;
+
+ALTER TABLE events_outbox
+  ADD COLUMN IF NOT EXISTS last_error text;
 
 CREATE INDEX IF NOT EXISTS idx_tasks_tenant ON tasks(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_workflow_runs_status ON workflow_runs(status);
 CREATE INDEX IF NOT EXISTS idx_workflow_steps_run ON workflow_steps(run_id);
 CREATE INDEX IF NOT EXISTS idx_approvals_status ON approvals(status);
 CREATE INDEX IF NOT EXISTS idx_tool_calls_run ON tool_calls(workflow_run_id);
+CREATE INDEX IF NOT EXISTS idx_events_outbox_status_created ON events_outbox(status, created_at);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_audit_logs_source_event_id ON audit_logs(source_event_id) WHERE source_event_id IS NOT NULL;

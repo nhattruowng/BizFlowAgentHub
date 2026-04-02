@@ -1,6 +1,9 @@
 package com.bizflow.audit.core;
 
 import com.bizflow.audit.api.AuditLogRequest;
+import com.bizflow.shared.events.OutboxEvent;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -14,6 +17,7 @@ import java.util.Comparator;
 @RequiredArgsConstructor
 public class AuditService {
     private final AuditLogRepository repository;
+    private final ObjectMapper objectMapper;
 
     public Mono<AuditLogEntity> append(AuditLogRequest request) {
         return repository.save(AuditLogEntity.builder()
@@ -22,6 +26,20 @@ public class AuditService {
                 .payload(request.getPayload())
                 .createdAt(Instant.now())
                 .build());
+    }
+
+    public Mono<AuditLogEntity> appendFromEvent(OutboxEvent event) {
+        if (event == null || !StringUtils.hasText(event.getId())) {
+            return Mono.empty();
+        }
+        return repository.findBySourceEventId(event.getId())
+                .switchIfEmpty(Mono.defer(() -> repository.save(AuditLogEntity.builder()
+                        .workflowRunId(event.getAggregateId())
+                        .action(toAuditAction(event.getEventType()))
+                        .payload(serializeEvent(event))
+                        .sourceEventId(event.getId())
+                        .createdAt(event.getCreatedAt() != null ? event.getCreatedAt() : Instant.now())
+                        .build())));
     }
 
     public Flux<AuditLogEntity> list(String workflowRunId, String action) {
@@ -36,5 +54,20 @@ public class AuditService {
             logs = repository.findAll();
         }
         return logs.sort(Comparator.comparing(AuditLogEntity::getCreatedAt).reversed());
+    }
+
+    private String toAuditAction(String eventType) {
+        if (!StringUtils.hasText(eventType)) {
+            return "EVENT_RECEIVED";
+        }
+        return eventType.replace('.', '_').toUpperCase();
+    }
+
+    private String serializeEvent(OutboxEvent event) {
+        try {
+            return objectMapper.writeValueAsString(event);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("Unable to serialize consumed event", exception);
+        }
     }
 }

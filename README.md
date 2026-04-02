@@ -26,7 +26,7 @@ flowchart LR
 ```
 
 ## Công Nghệ
-- Backend: Java 21, Spring Boot 3.x, Maven, PostgreSQL, Redis
+- Backend: Java 21, Spring Boot 3.x, Maven, PostgreSQL, Redis, Kafka
 - Workflow: State machine (ready for Temporal)
 - Agent Runtime: Python 3.11, FastAPI, Pydantic
 - Frontend: React + Vite + Tailwind
@@ -70,7 +70,7 @@ bizflow-agent-hub/
 
 ## Chạy Local Nhanh
 ```bash
-# 1) Start infra (Postgres/Redis/MinIO)
+# 1) Start infra (Postgres/Redis/MinIO/Kafka)
 ./infra/scripts/bootstrap.ps1
 
 # 2) Run gateway
@@ -124,7 +124,12 @@ npm run dev
 Dùng `.env.example` làm mẫu. Các service mặc định đọc config từ `application.yml` và env.
 
 ## Seed Data
-Postgres sẽ tự load từ `infra/db/init` khi container khởi động lần đầu.
+Postgres sẽ tự load từ `infra/db/init` khi container khởi động lần đầu. Kafka topic `events` được broker local tự tạo khi relay publish lần đầu.
+
+## Eventing Kafka
+- `workflow-engine` ghi domain event vào bảng `events_outbox` ngay khi tạo workflow run.
+- Outbox relay poll DB và publish event lên Kafka topic `events`.
+- `audit-service` chạy consumer worker nghe topic `events` và ghi audit log idempotent theo `source_event_id`.
 
 ## API Chính
 - `POST /api/tasks`
