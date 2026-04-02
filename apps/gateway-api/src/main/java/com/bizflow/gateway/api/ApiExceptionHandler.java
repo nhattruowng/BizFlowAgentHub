@@ -10,13 +10,17 @@ import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
+import java.util.stream.Collectors;
 import java.util.UUID;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
     @ExceptionHandler(WebExchangeBindException.class)
     public Mono<ResponseEntity<ErrorResponse>> handleValidation(WebExchangeBindException ex) {
-        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse("validation_error", ex.getMessage())));
+        String message = ex.getFieldErrors().stream()
+                .map(error -> error.getField() + ": " + error.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse("validation_error", message)));
     }
 
     @ExceptionHandler(ResponseStatusException.class)
