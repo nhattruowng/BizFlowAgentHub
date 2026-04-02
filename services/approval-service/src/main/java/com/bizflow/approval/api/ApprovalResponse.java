@@ -20,4 +20,5 @@ public class ApprovalResponse {
     private String decidedBy;
     private String reason;
     private Instant createdAt;
+    private Instant updatedAt;
 }
