@@ -202,6 +202,7 @@ npm run build
 - `docs/runbooks/local-development.md`
 - `docs/runbooks/user-guide.md`
 - `docs/modules/gateway-api.md`
+- `docs/modules/workflow-engine.md`
 
 ## TODO / Roadmap
 - Tích hợp Temporal thật.

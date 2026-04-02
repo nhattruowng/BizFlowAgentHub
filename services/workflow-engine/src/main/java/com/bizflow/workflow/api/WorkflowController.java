@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.UUID;
@@ -19,6 +20,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WorkflowController {
     private final WorkflowEngineService engineService;
+
+    @GetMapping
+    public Flux<WorkflowDefinitionResponse> listDefinitions() {
+        return engineService.listDefinitions();
+    }
 
     @PostMapping("/run")
     public Mono<WorkflowRunResponse> run(@Valid @RequestBody WorkflowRunRequest request) {
