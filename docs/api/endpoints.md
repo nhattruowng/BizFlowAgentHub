@@ -41,6 +41,9 @@ Returns task status and workflow run id.
 }
 ```
 
+Side effect:
+- Creates a workflow run, persists steps, and appends a Kafka outbox event that will be published to topic `events`.
+
 ### GET `/api/workflows/runs/{id}`
 Returns run status and steps.
 
@@ -50,6 +53,10 @@ Returns run status and steps.
 
 ## Audit Service
 ### GET `/api/audit/{runId}`
+### GET `/api/audit?workflowRunId=<runId>&action=<action>`
+
+Notes:
+- Audit records may be created by direct API append or by Kafka consumer worker after processing events from topic `events`.
 
 ## Tool Hub
 ### GET `/api/tools`

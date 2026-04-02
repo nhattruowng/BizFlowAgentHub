@@ -1,8 +1,11 @@
 package com.bizflow.shared.events;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
 import java.time.Instant;
 import java.util.Map;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class OutboxEvent {
     private String id;
     private String aggregateType;

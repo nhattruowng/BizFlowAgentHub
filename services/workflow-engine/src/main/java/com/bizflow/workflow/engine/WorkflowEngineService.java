@@ -5,9 +5,11 @@ import com.bizflow.shared.contracts.WorkflowStatus;
 import com.bizflow.shared.contracts.WorkflowStepView;
 import com.bizflow.workflow.api.WorkflowDefinitionResponse;
 import com.bizflow.workflow.api.WorkflowRunRequest;
+import com.bizflow.workflow.events.WorkflowOutboxService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -25,20 +27,26 @@ public class WorkflowEngineService {
     private final WorkflowRunRepository runRepository;
     private final WorkflowStepRepository stepRepository;
     private final WorkflowCatalog workflowCatalog;
+    private final WorkflowOutboxService workflowOutboxService;
 
     public Flux<WorkflowDefinitionResponse> listDefinitions() {
         return workflowCatalog.listDefinitions();
     }
 
+    @Transactional
     public Mono<WorkflowRunResponse> start(WorkflowRunRequest request) {
         WorkflowCatalog.WorkflowBlueprint blueprint = workflowCatalog.getRequired(request.getWorkflowName());
-        return workflowRepository.findByName(blueprint.name())
+        return workflowRepository.findByName(blueprint.getName())
                 .switchIfEmpty(Mono.defer(() -> createWorkflow(blueprint)))
                 .flatMap(workflow -> createWorkflowRun(workflow, request, blueprint)
                         .flatMap(run -> persistSteps(run, blueprint)
                                 .collectList()
                                 .flatMap(steps -> finalizeRun(run, blueprint)
-                                        .map(updatedRun -> mapResponse(updatedRun, blueprint.name(), steps)))));
+                                        .flatMap(updatedRun -> {
+                                            WorkflowRunResponse response = mapResponse(updatedRun, blueprint.getName(), steps);
+                                            return workflowOutboxService.appendWorkflowRunCreatedEvent(response, request)
+                                                    .thenReturn(response);
+                                        }))));
     }
 
     public Mono<WorkflowRunResponse> get(UUID runId) {
@@ -54,8 +62,8 @@ public class WorkflowEngineService {
 
     private Mono<WorkflowEntity> createWorkflow(WorkflowCatalog.WorkflowBlueprint blueprint) {
         return workflowRepository.save(WorkflowEntity.builder()
-                .name(blueprint.name())
-                .description(blueprint.description())
+                .name(blueprint.getName())
+                .description(blueprint.getDescription())
                 .createdAt(Instant.now())
                 .build());
     }
@@ -76,9 +84,9 @@ public class WorkflowEngineService {
 
     private Flux<WorkflowStepEntity> persistSteps(WorkflowRunEntity run, WorkflowCatalog.WorkflowBlueprint blueprint) {
         Instant now = Instant.now();
-        return stepRepository.saveAll(IntStream.range(0, blueprint.steps().size())
+        return stepRepository.saveAll(IntStream.range(0, blueprint.getSteps().size())
                 .mapToObj(index -> {
-                    WorkflowCatalog.WorkflowStepPlan stepPlan = blueprint.steps().get(index);
+                    WorkflowCatalog.WorkflowStepPlan stepPlan = blueprint.getSteps().get(index);
                     Instant startedAt = now.plusMillis(index * 100L);
                     Instant endedAt = stepPlan.status() == WorkflowStatus.WAITING_APPROVAL ? null : startedAt.plusMillis(50);
                     return WorkflowStepEntity.builder()
@@ -95,7 +103,7 @@ public class WorkflowEngineService {
 
     private Mono<WorkflowRunEntity> finalizeRun(WorkflowRunEntity run, WorkflowCatalog.WorkflowBlueprint blueprint) {
         return runRepository.save(run.toBuilder()
-                .status(blueprint.terminalStatus())
+                .status(blueprint.getTerminalStatus())
                 .updatedAt(Instant.now())
                 .build());
     }
@@ -119,10 +127,10 @@ public class WorkflowEngineService {
     }
 
     private WorkflowStatus initialRunStatus(WorkflowCatalog.WorkflowBlueprint blueprint) {
-        if (blueprint.steps().isEmpty()) {
+        if (blueprint.getSteps().isEmpty()) {
             return WorkflowStatus.QUEUED;
         }
-        return blueprint.steps().get(0).status();
+        return blueprint.getSteps().get(0).status();
     }
 
     private String resolveCurrentStep(List<WorkflowStepEntity> steps) {

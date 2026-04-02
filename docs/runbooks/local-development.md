@@ -7,6 +7,14 @@
 - Node 18+
 - Docker Desktop
 
+## Java Setup Note
+- Ensure `JAVA_HOME` points to JDK 21 before running Maven.
+- On Windows PowerShell:
+```powershell
+$env:JAVA_HOME='C:\Program Files\Java\jdk-21'
+$env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
+```
+
 ## Start Infra
 ```bash
 # Windows PowerShell
@@ -15,6 +23,8 @@
 # or bash
 ./infra/scripts/bootstrap.sh
 ```
+
+Infra local includes PostgreSQL, Redis, MinIO, and Kafka. Kafka listens on `localhost:9092` and the workflow relay publishes to topic `events`.
 
 ## Run Services
 ```bash
@@ -55,3 +65,9 @@ npm run dev
 
 ## Seed Data
 Database is seeded on container start from `infra/db/init`.
+
+## Kafka Event Flow Check
+1. Start `workflow-engine` and `audit-service`.
+2. Call `POST /api/workflows/run`.
+3. Confirm one row appears in `events_outbox` and is later marked `PUBLISHED`.
+4. Query `GET /api/audit/{runId}` or `GET /api/audit?workflowRunId=<runId>` to verify the consumed event was written as an audit log.

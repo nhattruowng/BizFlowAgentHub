@@ -10,6 +10,8 @@
 - Tu choi workflow khong nam trong catalog bang `404`, tranh tao workflow rac trong DB.
 - Mo rong `WorkflowRunResponse` voi `currentStep`, `errorReason`, `stepDetails`.
 - Them `GET /api/workflows` de client co the discover danh sach workflow duoc ho tro.
+- Them outbox pattern: khi tao workflow run, service ghi event `workflow.run.created` vao `events_outbox`.
+- Them Kafka outbox relay poll DB va publish len topic `events`, co retry qua status `NEW` va `FAILED`.
 - Thay context test bang service test cho run waiting-approval, reject unknown workflow va read-back step details.
 
 ## API chinh
@@ -35,4 +37,6 @@
 ## Luu y thiet ke
 - `WAITING_APPROVAL` duoc model hoa thanh step cuoi voi `endedAt = null`.
 - Catalog la noi duy nhat de khai bao workflow duoc support trong MVP.
+- Event producer hien tai nam trong `workflow-engine`, giup downstream consumer khong phu thuoc call HTTP sync.
+- Relay la scheduled worker trong cung service, co danh dau `published_at` va `last_error` de de van hanh.
 - Neu can them workflow moi, uu tien cap nhat `WorkflowCatalog` truoc khi mo endpoint intake o layer khac.

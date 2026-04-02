@@ -1,6 +1,8 @@
 package com.bizflow.audit.core;
 
 import com.bizflow.audit.api.AuditLogRequest;
+import com.bizflow.shared.events.OutboxEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +28,7 @@ class AuditServiceTest {
 
     @BeforeEach
     void setUp() {
-        auditService = new AuditService(repository);
+        auditService = new AuditService(repository, new ObjectMapper());
     }
 
     @Test
@@ -65,5 +67,29 @@ class AuditServiceTest {
 
         assertThat(logs).hasSize(1);
         assertThat(logs.getFirst().getWorkflowRunId()).isEqualTo("run-2");
+    }
+
+    @Test
+    void appendFromEventSkipsDuplicateBySourceEventId() {
+        AuditLogEntity existing = AuditLogEntity.builder()
+                .id(UUID.randomUUID())
+                .workflowRunId("run-3")
+                .action("WORKFLOW_RUN_CREATED")
+                .payload("{\"id\":\"evt-1\"}")
+                .sourceEventId("evt-1")
+                .createdAt(Instant.parse("2026-04-02T03:20:00Z"))
+                .build();
+        OutboxEvent event = new OutboxEvent();
+        event.setId("evt-1");
+        event.setAggregateId("run-3");
+        event.setEventType("workflow.run.created");
+        event.setCreatedAt(Instant.parse("2026-04-02T03:20:00Z"));
+
+        when(repository.findBySourceEventId("evt-1")).thenReturn(Mono.just(existing));
+
+        AuditLogEntity response = auditService.appendFromEvent(event).block();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getSourceEventId()).isEqualTo("evt-1");
     }
 }

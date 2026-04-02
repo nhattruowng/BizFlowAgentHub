@@ -2,6 +2,8 @@ package com.bizflow.workflow.engine;
 
 import com.bizflow.shared.contracts.WorkflowStatus;
 import com.bizflow.workflow.api.WorkflowDefinitionResponse;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ResponseStatusException;
@@ -53,9 +55,9 @@ public class WorkflowCatalog {
     public Flux<WorkflowDefinitionResponse> listDefinitions() {
         return Flux.fromIterable(blueprints.values())
                 .map(blueprint -> WorkflowDefinitionResponse.builder()
-                        .workflowName(blueprint.name())
-                        .description(blueprint.description())
-                        .terminalStatus(blueprint.terminalStatus())
+                        .workflowName(blueprint.getName())
+                        .description(blueprint.getDescription())
+                        .terminalStatus(blueprint.getTerminalStatus())
                         .steps(blueprint.stepNames())
                         .build());
     }
@@ -69,15 +71,17 @@ public class WorkflowCatalog {
     }
 
     private void register(WorkflowBlueprint blueprint) {
-        blueprints.put(blueprint.name(), blueprint);
+        blueprints.put(blueprint.getName(), blueprint);
     }
 
-    public record WorkflowBlueprint(
-            String name,
-            String description,
-            WorkflowStatus terminalStatus,
-            List<WorkflowStepPlan> steps
-    ) {
+    @Getter
+    @RequiredArgsConstructor
+    public static final class WorkflowBlueprint {
+        private final String name;
+        private final String description;
+        private final WorkflowStatus terminalStatus;
+        private final List<WorkflowStepPlan> steps;
+
         public List<String> stepNames() {
             return steps.stream().map(WorkflowStepPlan::stepName).toList();
         }

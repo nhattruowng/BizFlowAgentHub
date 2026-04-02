@@ -2,6 +2,7 @@ package com.bizflow.workflow.engine;
 
 import com.bizflow.shared.contracts.WorkflowStatus;
 import com.bizflow.workflow.api.WorkflowRunRequest;
+import com.bizflow.workflow.events.WorkflowOutboxService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -31,6 +33,9 @@ class WorkflowEngineServiceTest {
     @Mock
     private WorkflowStepRepository stepRepository;
 
+    @Mock
+    private WorkflowOutboxService workflowOutboxService;
+
     private WorkflowEngineService workflowEngineService;
 
     @BeforeEach
@@ -39,7 +44,8 @@ class WorkflowEngineServiceTest {
                 workflowRepository,
                 runRepository,
                 stepRepository,
-                new WorkflowCatalog()
+                new WorkflowCatalog(),
+                workflowOutboxService
         );
     }
 
@@ -70,6 +76,7 @@ class WorkflowEngineServiceTest {
         when(workflowRepository.findByName("invoice-approval-workflow")).thenReturn(Mono.just(workflow));
         when(runRepository.save(any(WorkflowRunEntity.class))).thenReturn(Mono.just(savedRun), Mono.just(updatedRun));
         when(stepRepository.saveAll(any(Iterable.class))).thenAnswer(invocation -> Flux.fromIterable(invocation.getArgument(0)));
+        when(workflowOutboxService.appendWorkflowRunCreatedEvent(any(), any())).thenReturn(Mono.empty());
 
         WorkflowRunRequest request = WorkflowRunRequest.builder()
                 .workflowName("invoice-approval-workflow")
@@ -90,6 +97,7 @@ class WorkflowEngineServiceTest {
                 "WAITING_APPROVAL"
         );
         assertThat(response.getStepDetails()).hasSize(4);
+        verify(workflowOutboxService).appendWorkflowRunCreatedEvent(any(), any());
     }
 
     @Test
