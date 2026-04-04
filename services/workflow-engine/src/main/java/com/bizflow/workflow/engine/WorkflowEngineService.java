@@ -135,7 +135,7 @@ public class WorkflowEngineService {
 
     private String resolveCurrentStep(List<WorkflowStepEntity> steps) {
         for (WorkflowStepEntity step : steps) {
-            if (step.getStatus() != WorkflowStatus.COMPLETED) {
+            if (!isTerminalStepStatus(step.getStatus())) {
                 return step.getStepName();
             }
         }
@@ -143,6 +143,12 @@ public class WorkflowEngineService {
             return null;
         }
         return steps.get(steps.size() - 1).getStepName();
+    }
+
+    private boolean isTerminalStepStatus(WorkflowStatus status) {
+        return status == WorkflowStatus.COMPLETED
+                || status == WorkflowStatus.APPROVED
+                || status == WorkflowStatus.REJECTED;
     }
 
     private WorkflowStepView mapStepView(WorkflowStepEntity entity) {

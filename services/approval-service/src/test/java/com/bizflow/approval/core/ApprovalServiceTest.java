@@ -1,6 +1,7 @@
 package com.bizflow.approval.core;
 
 import com.bizflow.approval.api.ApprovalRequest;
+import com.bizflow.approval.events.ApprovalOutboxService;
 import com.bizflow.shared.contracts.ApprovalStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +19,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -25,11 +27,14 @@ class ApprovalServiceTest {
     @Mock
     private ApprovalRepository repository;
 
+    @Mock
+    private ApprovalOutboxService approvalOutboxService;
+
     private ApprovalService approvalService;
 
     @BeforeEach
     void setUp() {
-        approvalService = new ApprovalService(repository);
+        approvalService = new ApprovalService(repository, approvalOutboxService);
     }
 
     @Test
@@ -51,12 +56,14 @@ class ApprovalServiceTest {
                 .requestedBy("demo-user")
                 .reason("Invoice > 1000")
                 .build();
+        when(approvalOutboxService.appendApprovalRequestedEvent(any())).thenReturn(Mono.empty());
 
         var response = approvalService.create(request).block();
 
         assertThat(response).isNotNull();
         assertThat(response.getStatus()).isEqualTo(ApprovalStatus.PENDING);
         assertThat(response.getWorkflowRunId()).isEqualTo("run-1");
+        verify(approvalOutboxService).appendApprovalRequestedEvent(any());
     }
 
     @Test
@@ -96,5 +103,34 @@ class ApprovalServiceTest {
         List<?> responses = approvalService.list("run-3", ApprovalStatus.PENDING).collectList().block();
 
         assertThat(responses).hasSize(1);
+    }
+
+    @Test
+    void approvePublishesDecisionEvent() {
+        UUID approvalId = UUID.randomUUID();
+        ApprovalEntity pending = ApprovalEntity.builder()
+                .id(approvalId)
+                .workflowRunId("run-4")
+                .requestedBy("demo-user")
+                .reason("Needs approval")
+                .status(ApprovalStatus.PENDING)
+                .createdAt(Instant.parse("2026-04-02T03:30:00Z"))
+                .updatedAt(Instant.parse("2026-04-02T03:30:00Z"))
+                .build();
+        ApprovalEntity approved = pending.toBuilder()
+                .status(ApprovalStatus.APPROVED)
+                .decidedBy("lead-user")
+                .updatedAt(Instant.parse("2026-04-02T03:31:00Z"))
+                .build();
+
+        when(repository.findById(approvalId)).thenReturn(Mono.just(pending));
+        when(repository.save(any(ApprovalEntity.class))).thenReturn(Mono.just(approved));
+        when(approvalOutboxService.appendApprovalDecisionEvent(any())).thenReturn(Mono.empty());
+
+        var response = approvalService.approve(approvalId, "lead-user").block();
+
+        assertThat(response).isNotNull();
+        assertThat(response.getStatus()).isEqualTo(ApprovalStatus.APPROVED);
+        verify(approvalOutboxService).appendApprovalDecisionEvent(any());
     }
 }

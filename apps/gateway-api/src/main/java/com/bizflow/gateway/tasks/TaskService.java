@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.bizflow.shared.contracts.TaskRequest;
 import com.bizflow.shared.contracts.TaskResponse;
 import com.bizflow.shared.contracts.TaskStatus;
+import com.bizflow.shared.events.OutboxEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -100,10 +101,39 @@ public class TaskService {
     private Mono<TaskResponse> markQueued(TaskEntity task, WorkflowClient.WorkflowRunResponse runResponse) {
         TaskEntity queuedTask = task.toBuilder()
                 .workflowRunId(runResponse.getRunId())
-                .status(TaskStatus.QUEUED)
+                .status(mapWorkflowStatusToTaskStatus(runResponse.getStatus()))
                 .updatedAt(Instant.now())
                 .build();
         return taskRepository.save(queuedTask).map(this::mapResponse);
+    }
+
+    public Mono<Void> syncFromWorkflowEvent(OutboxEvent event) {
+        if (event == null || event.getPayload() == null) {
+            return Mono.empty();
+        }
+        String workflowRunId = valueAsString(event.getPayload(), "workflowRunId");
+        String taskId = valueAsString(event.getPayload(), "taskId");
+        String status = valueAsString(event.getPayload(), "status");
+
+        Mono<TaskEntity> taskMono = Mono.empty();
+        if (StringUtils.hasText(taskId)) {
+            try {
+                taskMono = taskRepository.findById(UUID.fromString(taskId));
+            } catch (IllegalArgumentException ignored) {
+                taskMono = Mono.empty();
+            }
+        }
+        if (StringUtils.hasText(workflowRunId)) {
+            taskMono = taskMono.switchIfEmpty(taskRepository.findByWorkflowRunId(workflowRunId));
+        }
+
+        return taskMono
+                .flatMap(task -> taskRepository.save(task.toBuilder()
+                        .workflowRunId(StringUtils.hasText(workflowRunId) ? workflowRunId : task.getWorkflowRunId())
+                        .status(mapWorkflowStatusToTaskStatus(status))
+                        .updatedAt(Instant.now())
+                        .build()))
+                .then();
     }
 
     private Mono<TaskResponse> markWorkflowFailure(TaskEntity task, Throwable error) {
@@ -127,6 +157,18 @@ public class TaskService {
 
     private String resolveCorrelationId(String correlationId) {
         return StringUtils.hasText(correlationId) ? correlationId : UUID.randomUUID().toString();
+    }
+
+    private TaskStatus mapWorkflowStatusToTaskStatus(String workflowStatus) {
+        if (!StringUtils.hasText(workflowStatus)) {
+            return TaskStatus.RUNNING;
+        }
+        return switch (workflowStatus) {
+            case "CREATED", "QUEUED" -> TaskStatus.QUEUED;
+            case "COMPLETED", "APPROVED" -> TaskStatus.COMPLETED;
+            case "FAILED", "REJECTED", "ESCALATED" -> TaskStatus.FAILED;
+            default -> TaskStatus.RUNNING;
+        };
     }
 
     private TaskResponse mapResponse(TaskEntity entity) {
@@ -168,5 +210,10 @@ public class TaskService {
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to deserialize task payload", e);
         }
+    }
+
+    private String valueAsString(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        return value == null ? null : String.valueOf(value);
     }
 }

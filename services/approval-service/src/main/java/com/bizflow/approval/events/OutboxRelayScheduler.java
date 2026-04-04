@@ -1,4 +1,4 @@
-package com.bizflow.workflow.events;
+package com.bizflow.approval.events;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -37,11 +37,11 @@ public class OutboxRelayScheduler {
     Mono<Void> relayBatch() {
         return Flux.concat(
                         outboxEventRepository.findByProducerServiceAndStatusOrderByCreatedAtAsc(
-                                WorkflowOutboxService.PRODUCER_SERVICE,
-                                WorkflowOutboxService.STATUS_NEW
+                                ApprovalOutboxService.PRODUCER_SERVICE,
+                                ApprovalOutboxService.STATUS_NEW
                         ),
                         outboxEventRepository.findByProducerServiceAndStatusOrderByCreatedAtAsc(
-                                WorkflowOutboxService.PRODUCER_SERVICE,
+                                ApprovalOutboxService.PRODUCER_SERVICE,
                                 STATUS_FAILED
                         )
                 )
