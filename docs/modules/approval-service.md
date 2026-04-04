@@ -9,6 +9,7 @@
 - `GET /api/approvals` ho tro filter theo `workflowRunId` va `status`.
 - Chan approve/reject lap lai tren approval da duoc quyet dinh, tra `409 Conflict`.
 - `ApprovalResponse` bo sung `updatedAt`.
+- Them outbox relay va Kafka event cho `approval.requested`, `approval.approved`, `approval.rejected`.
 - Thay context test bang service test cho create, conflict va filter list.
 
 ## API chinh
@@ -25,3 +26,4 @@
 ## Luu y thiet ke
 - Chi approval o trang thai `PENDING` moi duoc phep chuyen sang `APPROVED` hoac `REJECTED`.
 - Muc conflict duoc dua len API thay vi silently overwrite de tranh mat audit trail.
+- Approval event duoc publish bat dong bo qua Kafka topic `events` de workflow-engine va audit-service consume.

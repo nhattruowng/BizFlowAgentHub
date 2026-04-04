@@ -4,6 +4,7 @@ import com.bizflow.gateway.config.TenantIdentifierResolver;
 import com.bizflow.gateway.workflow.WorkflowClient;
 import com.bizflow.shared.contracts.TaskRequest;
 import com.bizflow.shared.contracts.TaskStatus;
+import com.bizflow.shared.events.OutboxEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class TaskServiceTest {
                 .updatedAt(Instant.parse("2026-04-02T01:00:00Z"))
                 .build();
         TaskEntity queuedTask = savedTask.toBuilder()
-                .status(TaskStatus.QUEUED)
+                .status(TaskStatus.COMPLETED)
                 .workflowRunId("run-123")
                 .updatedAt(Instant.parse("2026-04-02T01:01:00Z"))
                 .build();
@@ -71,7 +72,7 @@ class TaskServiceTest {
         when(taskInputRepository.save(any(TaskInputEntity.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
         when(workflowClient.startWorkflow(any())).thenReturn(Mono.just(WorkflowClient.WorkflowRunResponse.builder()
                 .runId("run-123")
-                .status("QUEUED")
+                .status("COMPLETED")
                 .build()));
 
         TaskRequest request = TaskRequest.builder()
@@ -86,7 +87,7 @@ class TaskServiceTest {
 
         assertThat(response).isNotNull();
         assertThat(response.getTaskId()).isEqualTo(taskId.toString());
-        assertThat(response.getStatus()).isEqualTo(TaskStatus.QUEUED);
+        assertThat(response.getStatus()).isEqualTo(TaskStatus.COMPLETED);
         assertThat(response.getWorkflowRunId()).isEqualTo("run-123");
 
         ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
@@ -157,5 +158,36 @@ class TaskServiceTest {
         assertThat(response.getTaskId()).isEqualTo(taskId.toString());
         assertThat(response.getWorkflowName()).isEqualTo("policy-lookup-workflow");
         assertThat(response.getPayload()).containsEntry("query", "invoice");
+    }
+
+    @Test
+    void syncFromWorkflowEventUpdatesTaskByWorkflowRunId() {
+        UUID taskId = UUID.randomUUID();
+        TaskEntity task = TaskEntity.builder()
+                .id(taskId)
+                .tenantId(TenantIdentifierResolver.DEFAULT_TENANT_ID)
+                .source("upload")
+                .type("invoice_approval")
+                .status(TaskStatus.RUNNING)
+                .workflowRunId("run-789")
+                .correlationId("corr-9")
+                .createdAt(Instant.parse("2026-04-02T02:00:00Z"))
+                .updatedAt(Instant.parse("2026-04-02T02:05:00Z"))
+                .build();
+        OutboxEvent event = new OutboxEvent();
+        event.setEventType("workflow.run.updated");
+        event.setPayload(Map.of(
+                "workflowRunId", "run-789",
+                "status", "REJECTED"
+        ));
+
+        when(taskRepository.findByWorkflowRunId("run-789")).thenReturn(Mono.just(task));
+        when(taskRepository.save(any(TaskEntity.class))).thenAnswer(invocation -> Mono.just(invocation.getArgument(0)));
+
+        taskService.syncFromWorkflowEvent(event).block();
+
+        ArgumentCaptor<TaskEntity> taskCaptor = ArgumentCaptor.forClass(TaskEntity.class);
+        verify(taskRepository).save(taskCaptor.capture());
+        assertThat(taskCaptor.getValue().getStatus()).isEqualTo(TaskStatus.FAILED);
     }
 }

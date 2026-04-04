@@ -9,6 +9,7 @@
 - Output mock duoc chuyen tu `echo` chung sang ket qua co y nghia theo tool.
 - Them `GET /api/tools/calls/{workflowRunId}` de xem lich su goi tool.
 - `ToolInvokeResponse` bo sung `callId` va `sideEffectLevel`.
+- `submit_approval_request` da duoc noi voi `approval-service` thay vi chi mock trang thai cho UI.
 - Context test duoc thay bang service test cho invalid input, approval flow va call history.
 
 ## API chinh
@@ -29,6 +30,6 @@
 ```
 
 ## Luu y thiet ke
-- `submit_approval_request` khong thuc thi tac vu ngay lap tuc ma tra ve `WAITING_APPROVAL`.
+- `submit_approval_request` tao approval that, tra ve `approvalId` trong output va dat tool call sang `WAITING_APPROVAL`.
 - Validation hien tai la rule-based, de de nang cap thanh schema-based validator ve sau.
 - Lich su tool call duoc map kem metadata cua registry de UI khong can tu join du lieu.

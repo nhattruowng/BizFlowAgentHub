@@ -17,6 +17,7 @@
 - Them `GET /api/tasks` de list task theo `tenantId` va `limit`.
 - Them `GET /api/tasks/{id}/details` de xem metadata + payload da luu.
 - Sua validation error response de de doc hon o muc field-level.
+- Dong bo `tasks.status` theo workflow event Kafka thay vi de task mac dinh o `QUEUED`.
 - Thay smoke test bang service test cho create success, workflow failure va payload retrieval.
 
 ## API chinh
@@ -43,3 +44,4 @@
 - Header mac dinh `X-Tenant-Id` da duoc chuyen sang UUID seed hop le thay vi chuoi `demo-tenant`.
 - Neu client gui tenant khong phai UUID va khong nam trong danh sach alias ho tro, API tra `400 Bad Request`.
 - `workflow-engine` van la dependency bat buoc trong luong `create task`.
+- Gateway map ngay workflow status luc kick-off va tiep tuc nghe `workflow.run.created` / `workflow.run.updated` de giu task lifecycle nhat quan.

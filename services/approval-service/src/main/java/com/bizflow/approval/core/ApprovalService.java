@@ -2,10 +2,12 @@ package com.bizflow.approval.core;
 
 import com.bizflow.approval.api.ApprovalRequest;
 import com.bizflow.approval.api.ApprovalResponse;
+import com.bizflow.approval.events.ApprovalOutboxService;
 import com.bizflow.shared.contracts.ApprovalStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ResponseStatusException;
 import reactor.core.publisher.Flux;
@@ -19,7 +21,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ApprovalService {
     private final ApprovalRepository repository;
+    private final ApprovalOutboxService approvalOutboxService;
 
+    @Transactional
     public Mono<ApprovalResponse> create(ApprovalRequest request) {
         Instant now = Instant.now();
         return repository.save(ApprovalEntity.builder()
@@ -30,7 +34,8 @@ public class ApprovalService {
                         .createdAt(now)
                         .updatedAt(now)
                         .build())
-                .map(this::map);
+                .map(this::map)
+                .flatMap(response -> approvalOutboxService.appendApprovalRequestedEvent(response).thenReturn(response));
     }
 
     public Flux<ApprovalResponse> list(String workflowRunId, ApprovalStatus status) {
@@ -63,6 +68,7 @@ public class ApprovalService {
         return updateDecision(id, decidedBy, ApprovalStatus.REJECTED);
     }
 
+    @Transactional
     private Mono<ApprovalResponse> updateDecision(UUID id, String decidedBy, ApprovalStatus status) {
         return repository.findById(id)
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Approval not found")))
@@ -78,7 +84,8 @@ public class ApprovalService {
                                     .decidedBy(decidedBy)
                                     .updatedAt(Instant.now())
                                     .build())
-                            .map(this::map);
+                            .map(this::map)
+                            .flatMap(response -> approvalOutboxService.appendApprovalDecisionEvent(response).thenReturn(response));
                 });
     }
 

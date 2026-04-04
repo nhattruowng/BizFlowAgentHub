@@ -128,7 +128,10 @@ Postgres sẽ tự load từ `infra/db/init` khi container khởi động lần 
 
 ## Eventing Kafka
 - `workflow-engine` ghi domain event vào bảng `events_outbox` ngay khi tạo workflow run.
+- `approval-service` ghi approval event vào outbox khi tạo request, approve, hoặc reject.
 - Outbox relay poll DB và publish event lên Kafka topic `events`.
+- `workflow-engine` consume approval decision event để cập nhật lại workflow run đang chờ duyệt.
+- `gateway-api` consume workflow event để đồng bộ `tasks.status` theo trạng thái workflow thực tế.
 - `audit-service` chạy consumer worker nghe topic `events` và ghi audit log idempotent theo `source_event_id`.
 
 ## API Chính
@@ -168,9 +171,10 @@ curl -X POST http://localhost:8081/api/tasks \
 ```
 
 ## Approval Flow
-- Tool Hub hoặc Policy Agent tạo approval request.
+- Tool Hub giờ tạo approval request thật qua `approval-service` khi invoke tool cần approval.
 - Admin Console hiển thị Approval Queue.
 - Duyệt qua `POST /api/approvals/{id}/approve`.
+- Quyết định approval được phát lên Kafka và phản chiếu lại vào workflow/task lifecycle.
 
 ## Mở Rộng Agent / Tool / Workflow
 1. Thêm agent mới trong `apps/agent-runtime/app/agents`.

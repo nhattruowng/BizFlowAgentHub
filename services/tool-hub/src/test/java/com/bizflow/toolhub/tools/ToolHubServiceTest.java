@@ -1,6 +1,7 @@
 package com.bizflow.toolhub.tools;
 
 import com.bizflow.shared.contracts.ToolSideEffectLevel;
+import com.bizflow.toolhub.api.ApprovalClient;
 import com.bizflow.toolhub.api.ToolInvokeRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +30,14 @@ class ToolHubServiceTest {
     @Mock
     private ToolCallRepository toolCallRepository;
 
+    @Mock
+    private ApprovalClient approvalClient;
+
     private ToolHubService toolHubService;
 
     @BeforeEach
     void setUp() {
-        toolHubService = new ToolHubService(toolRepository, toolCallRepository, new ObjectMapper());
+        toolHubService = new ToolHubService(toolRepository, toolCallRepository, approvalClient, new ObjectMapper());
     }
 
     @Test
@@ -72,11 +76,16 @@ class ToolHubServiceTest {
                 .workflowRunId("run-2")
                 .status("WAITING_APPROVAL")
                 .requestPayload("{\"reason\":\"Need approval\"}")
-                .responsePayload("{\"message\":\"Approval required before execution\"}")
+                .responsePayload("{\"message\":\"Approval required before execution\",\"approvalId\":\"approval-123\",\"approvalStatus\":\"PENDING\"}")
                 .createdAt(Instant.parse("2026-04-02T03:00:00Z"))
                 .build();
 
         when(toolRepository.findByToolName("submit_approval_request")).thenReturn(Mono.just(tool));
+        when(approvalClient.createApproval(any())).thenReturn(Mono.just(ApprovalClient.ApprovalResponse.builder()
+                .id("approval-123")
+                .workflowRunId("run-2")
+                .status("PENDING")
+                .build()));
         when(toolCallRepository.save(any(ToolCallEntity.class))).thenReturn(Mono.just(savedCall));
 
         ToolInvokeRequest request = ToolInvokeRequest.builder()
@@ -90,6 +99,7 @@ class ToolHubServiceTest {
         assertThat(response.getStatus()).isEqualTo("WAITING_APPROVAL");
         assertThat(response.isApprovalRequired()).isTrue();
         assertThat(response.getCallId()).isEqualTo(callId.toString());
+        assertThat(response.getOutput()).containsEntry("approvalId", "approval-123");
     }
 
     @Test

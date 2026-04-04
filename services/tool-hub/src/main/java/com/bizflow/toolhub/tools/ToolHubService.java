@@ -1,5 +1,6 @@
 package com.bizflow.toolhub.tools;
 
+import com.bizflow.toolhub.api.ApprovalClient;
 import com.bizflow.toolhub.api.ToolCallHistoryResponse;
 import com.bizflow.toolhub.api.ToolInvokeRequest;
 import com.bizflow.toolhub.api.ToolInvokeResponse;
@@ -26,6 +27,7 @@ public class ToolHubService {
 
     private final ToolRepository toolRepository;
     private final ToolCallRepository toolCallRepository;
+    private final ApprovalClient approvalClient;
     private final ObjectMapper objectMapper;
 
     public Flux<ToolEntity> listTools() {
@@ -44,29 +46,36 @@ public class ToolHubService {
                 .switchIfEmpty(Mono.error(new ResponseStatusException(HttpStatus.NOT_FOUND, "Tool not found: " + toolName)))
                 .flatMap(tool -> {
                     validateInput(toolName, request.getInput());
+                    if (tool.isApprovalRequired()) {
+                        return approvalClient.createApproval(ApprovalClient.ApprovalCreateRequest.builder()
+                                        .workflowRunId(request.getWorkflowRunId())
+                                        .requestedBy(resolveRequestedBy(request.getInput()))
+                                        .reason(resolveApprovalReason(toolName, request.getInput()))
+                                        .build())
+                                .flatMap(approval -> saveToolCall(
+                                        tool,
+                                        request,
+                                        "WAITING_APPROVAL",
+                                        approvalOutput(toolName, request.getInput(), approval.getId(), approval.getStatus())
+                                ))
+                                .map(savedCall -> ToolInvokeResponse.builder()
+                                        .callId(savedCall.getId().toString())
+                                        .toolName(toolName)
+                                        .status("WAITING_APPROVAL")
+                                        .output(fromJson(savedCall.getResponsePayload()))
+                                        .sideEffectLevel(tool.getSideEffectLevel())
+                                        .approvalRequired(true)
+                                        .build());
+                    }
 
-                    Map<String, Object> output = tool.isApprovalRequired()
-                            ? approvalOutput(toolName, request.getInput())
-                            : executeMock(toolName, request.getInput());
-                    String status = tool.isApprovalRequired() ? "WAITING_APPROVAL" : "COMPLETED";
-
-                    ToolCallEntity call = ToolCallEntity.builder()
-                            .toolId(tool.getId())
-                            .workflowRunId(request.getWorkflowRunId())
-                            .requestPayload(toJson(request.getInput()))
-                            .responsePayload(toJson(output))
-                            .status(status)
-                            .createdAt(Instant.now())
-                            .build();
-
-                    return toolCallRepository.save(call)
+                    return saveToolCall(tool, request, "COMPLETED", executeMock(toolName, request.getInput()))
                             .map(savedCall -> ToolInvokeResponse.builder()
                                     .callId(savedCall.getId().toString())
                                     .toolName(toolName)
-                                    .status(status)
-                                    .output(output)
+                                    .status("COMPLETED")
+                                    .output(fromJson(savedCall.getResponsePayload()))
                                     .sideEffectLevel(tool.getSideEffectLevel())
-                                    .approvalRequired(tool.isApprovalRequired())
+                                    .approvalRequired(false)
                                     .build());
                 });
     }
@@ -149,12 +158,42 @@ public class ToolHubService {
         return output;
     }
 
-    private Map<String, Object> approvalOutput(String toolName, Map<String, Object> input) {
+    private Mono<ToolCallEntity> saveToolCall(ToolEntity tool,
+                                              ToolInvokeRequest request,
+                                              String status,
+                                              Map<String, Object> output) {
+        ToolCallEntity call = ToolCallEntity.builder()
+                .toolId(tool.getId())
+                .workflowRunId(request.getWorkflowRunId())
+                .requestPayload(toJson(request.getInput()))
+                .responsePayload(toJson(output))
+                .status(status)
+                .createdAt(Instant.now())
+                .build();
+        return toolCallRepository.save(call);
+    }
+
+    private Map<String, Object> approvalOutput(String toolName,
+                                               Map<String, Object> input,
+                                               String approvalId,
+                                               String approvalStatus) {
         Map<String, Object> output = new HashMap<>();
         output.put("toolName", toolName);
         output.put("message", "Approval required before execution");
         output.put("approvalContext", input);
+        output.put("approvalId", approvalId);
+        output.put("approvalStatus", approvalStatus);
         return output;
+    }
+
+    private String resolveApprovalReason(String toolName, Map<String, Object> input) {
+        Object reason = input == null ? null : input.get("reason");
+        return reason == null ? "Approval required for tool " + toolName : String.valueOf(reason);
+    }
+
+    private String resolveRequestedBy(Map<String, Object> input) {
+        Object requestedBy = input == null ? null : input.get("requestedBy");
+        return requestedBy == null ? "tool-hub" : String.valueOf(requestedBy);
     }
 
     private ToolCallHistoryResponse mapHistory(ToolCallEntity call, ToolEntity tool) {

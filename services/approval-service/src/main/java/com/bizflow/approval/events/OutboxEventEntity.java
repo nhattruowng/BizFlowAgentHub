@@ -1,4 +1,4 @@
-package com.bizflow.workflow.events;
+package com.bizflow.approval.events;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
