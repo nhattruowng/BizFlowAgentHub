@@ -88,6 +88,43 @@ ensure_docker() {
   return 1
 }
 
+ensure_java() {
+  local java_bin=""
+
+  if [ -n "${JAVA_HOME:-}" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    java_bin="$JAVA_HOME/bin/java"
+  elif [ -x "/c/Program Files/Java/jdk-21/bin/java.exe" ]; then
+    export JAVA_HOME="/c/Program Files/Java/jdk-21"
+    java_bin="$JAVA_HOME/bin/java.exe"
+  elif [ -x "/c/Program Files/Java/latest/bin/java.exe" ]; then
+    export JAVA_HOME="/c/Program Files/Java/latest"
+    java_bin="$JAVA_HOME/bin/java.exe"
+  elif command_exists java; then
+    java_bin="$(command -v java)"
+  fi
+
+  if [ -z "$java_bin" ]; then
+    info "Java not found. Please install JDK 21 and re-run."
+    return 1
+  fi
+
+  local java_version_output
+  java_version_output="$("$java_bin" -version 2>&1 | head -n 1)"
+
+  if [[ "$java_version_output" != *\"21* && "$java_version_output" != *\"22* && "$java_version_output" != *\"23* && "$java_version_output" != *\"24* && "$java_version_output" != *\"25* ]]; then
+    info "Detected Java is not JDK 21+: $java_version_output"
+    info "Set JAVA_HOME to a JDK 21 installation before running this script."
+    return 1
+  fi
+
+  if [ -n "${JAVA_HOME:-}" ]; then
+    export PATH="$JAVA_HOME/bin:$PATH"
+    info "Using JAVA_HOME=$JAVA_HOME"
+  else
+    info "Using java from PATH: $java_bin"
+  fi
+}
+
 wait_for_http() {
   local url="$1"
   local name="$2"
@@ -132,6 +169,7 @@ start_service() {
 info "Root: $ROOT_DIR"
 
 ensure_docker
+ensure_java
 ensure_maven
 ensure_python
 ensure_node

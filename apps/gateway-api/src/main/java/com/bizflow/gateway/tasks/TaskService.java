@@ -163,12 +163,20 @@ public class TaskService {
         if (!StringUtils.hasText(workflowStatus)) {
             return TaskStatus.RUNNING;
         }
-        return switch (workflowStatus) {
-            case "CREATED", "QUEUED" -> TaskStatus.QUEUED;
-            case "COMPLETED", "APPROVED" -> TaskStatus.COMPLETED;
-            case "FAILED", "REJECTED", "ESCALATED" -> TaskStatus.FAILED;
-            default -> TaskStatus.RUNNING;
-        };
+        switch (workflowStatus) {
+            case "CREATED":
+            case "QUEUED":
+                return TaskStatus.QUEUED;
+            case "COMPLETED":
+            case "APPROVED":
+                return TaskStatus.COMPLETED;
+            case "FAILED":
+            case "REJECTED":
+            case "ESCALATED":
+                return TaskStatus.FAILED;
+            default:
+                return TaskStatus.RUNNING;
+        }
     }
 
     private TaskResponse mapResponse(TaskEntity entity) {

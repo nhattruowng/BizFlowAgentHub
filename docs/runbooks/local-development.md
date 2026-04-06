@@ -14,6 +14,11 @@
 $env:JAVA_HOME='C:\Program Files\Java\jdk-21'
 $env:Path='C:\Program Files\Java\jdk-21\bin;' + $env:Path
 ```
+- On Git Bash:
+```bash
+export JAVA_HOME="/c/Program Files/Java/jdk-21"
+export PATH="$JAVA_HOME/bin:$PATH"
+```
 
 ## Start Infra
 ```bash
