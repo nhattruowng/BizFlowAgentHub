@@ -181,25 +181,25 @@ else
   docker compose -f "$ROOT_DIR/docker-compose.yml" up -d
 fi
 
-info "Building Java services (skip tests)"
-(cd "$ROOT_DIR" && mvn -q -pl apps/gateway-api,services/workflow-engine,services/tool-hub,services/approval-service,services/knowledge-service,services/audit-service -am -DskipTests package)
+info "Building Java services and installing shared modules locally (skip tests)"
+(cd "$ROOT_DIR" && mvn -q -pl apps/gateway-api,services/workflow-engine,services/tool-hub,services/approval-service,services/knowledge-service,services/audit-service -am -DskipTests install)
 
-start_service "gateway-api" "cd '$ROOT_DIR' && mvn -q -pl apps/gateway-api spring-boot:run"
+start_service "gateway-api" "cd '$ROOT_DIR' && mvn -q -pl apps/gateway-api -am spring-boot:run"
 wait_for_http "http://localhost:8081/actuator/health" "gateway-api"
 
-start_service "workflow-engine" "cd '$ROOT_DIR' && mvn -q -pl services/workflow-engine spring-boot:run"
+start_service "workflow-engine" "cd '$ROOT_DIR' && mvn -q -pl services/workflow-engine -am spring-boot:run"
 wait_for_http "http://localhost:8082/actuator/health" "workflow-engine"
 
-start_service "tool-hub" "cd '$ROOT_DIR' && mvn -q -pl services/tool-hub spring-boot:run"
+start_service "tool-hub" "cd '$ROOT_DIR' && mvn -q -pl services/tool-hub -am spring-boot:run"
 wait_for_http "http://localhost:8083/actuator/health" "tool-hub"
 
-start_service "approval-service" "cd '$ROOT_DIR' && mvn -q -pl services/approval-service spring-boot:run"
+start_service "approval-service" "cd '$ROOT_DIR' && mvn -q -pl services/approval-service -am spring-boot:run"
 wait_for_http "http://localhost:8084/actuator/health" "approval-service"
 
-start_service "knowledge-service" "cd '$ROOT_DIR' && mvn -q -pl services/knowledge-service spring-boot:run"
+start_service "knowledge-service" "cd '$ROOT_DIR' && mvn -q -pl services/knowledge-service -am spring-boot:run"
 wait_for_http "http://localhost:8085/actuator/health" "knowledge-service"
 
-start_service "audit-service" "cd '$ROOT_DIR' && mvn -q -pl services/audit-service spring-boot:run"
+start_service "audit-service" "cd '$ROOT_DIR' && mvn -q -pl services/audit-service -am spring-boot:run"
 wait_for_http "http://localhost:8086/actuator/health" "audit-service"
 
 info "Setting up agent runtime venv + deps"
